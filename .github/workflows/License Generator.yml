@@ -1,55 +1,62 @@
-name: License Generator
+name: Python3.10.8 License Automation
 on:
   schedule:
 
-    - cron: "0 18 * * *"  # UTC时间每天18点（北京时间次日2点）
-  workflow_dispatch:  # 允许手动触发
+    - cron: "30 18 * * *"  # 优化触发时间为UTC 18:30（北京时间02:30）
+  workflow_dispatch:
 
 jobs:
-  generate-license:
+  build:
     runs-on: ubuntu-latest
     steps:
 
-    - name: 检出仓库代码
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # 获取完整提交历史
+        persist-credentials: false  # 增强安全设置
 
 
 
-    - name: 创建license目录
-      run: mkdir -p license
-
-
-
-    - name: 配置Python环境
+    - name: Setup Python 3.10.8
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.10.8"  # 精确指定维护版本
+        cache: 'pip'  # 启用依赖缓存加速
 
 
 
-    - name: 安装依赖
+    - name: Create workspace
       run: |
-        python -m pip install --upgrade pip
+        mkdir -p license
+        echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+
+
+
+    - name: Install tools
+      run: |
+        python -m pip install --no-cache-dir --upgrade pip
         pip install pyarmor==9.0.7 pyinstaller==5.13.2
 
 
 
-    - name: 配置pyarmor
-      run: pyarmor cfg outer_keyname=Qmusic.lic
-
-
-
-    - name: 生成许可证
-      run: pyarmor gen key -e 31 --output ./license/
-
-
-
-    - name: 提交生成文件
+    - name: Configure environment
       run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add ./license/*
-        git commit -m "Auto-generate license: $(date -u '+%Y-%m-%d %H:%M')" || echo "No changes to commit"
+        pyarmor init --src . 
+        pyarmor cfg outer_keyname=Qmusic.lic
+
+
+
+    - name: Generate license
+      run: pyarmor gen key -e 31 --output ./license/
+      env:
+        PYARMOR_HOME: ./license  # 指定配置文件存储路径
+
+
+
+    - name: Commit artifacts
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git config --global user.name "always1ov"
+        git config --global user.email "always1ov@github.actions"
+        git add ./license/
+        git commit -m "[Bot] Auto-generated license $(date +'%Y%m%d-%H%M%S')"
         git push origin main

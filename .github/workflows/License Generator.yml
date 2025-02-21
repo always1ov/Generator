@@ -1,60 +1,47 @@
-# .github/workflows/pyarmor_license.yml
-name: PyArmor-License
-on:
-  schedule:
+name: Build and Commit License
 
-    - cron: "30 18 * * *"  # 北京时间02:30
-  workflow_dispatch:
+on:
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
-  generate:
+  generate-license:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
     steps:
 
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false  # 重要！保证后续提交权限
 
 
 
-    - name: Setup Python 3.10.8
+    - name: Set up Python 3.10.8
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10.8"  # 精确指定维护版本
-        cache: 'pip'  # 启用依赖缓存加速
+        python-version: '3.10.8'
 
 
 
-    - name: Create workspace
+    - name: Install dependencies
       run: |
-        mkdir -p license
-        echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+        python -m pip install --upgrade pip
+        pip install pyarmor==9.0.7 pyinstaller===5.13.2
 
 
 
-    - name: Install tools
+    - name: Configure and generate license
       run: |
-        python -m pip install --no-cache-dir --upgrade pip
-        pip install pyarmor==9.0.7 pyinstaller==5.13.2
-
-
-
-    - name: Configure environment
-      run: |
-        pyarmor init --src . 
         pyarmor cfg outer_keyname=Qmusic.lic
+        pyarmor gen key -e 31
 
 
 
-    - name: Generate license
-      run: pyarmor gen key -e 31 --output ./license/
-      env:
-        PYARMOR_HOME: ./license  # 指定配置文件存储路径
-
-        
-
-    - name: 提交更新
+    - name: Commit generated files
       run: |
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        mkdir -p license  # 创建目录（如果不存在）
+        mv Qmusic.lic *.lic license/  # 移动生成文件到license目录
         git add license/
-        git commit -m "AutoUpdate: $(date +'%Y%m%d_%H%M%S')"
+        git commit -m "Update license files via GitHub Actions"
         git push

@@ -1,24 +1,25 @@
-name: Build and Commit License
+name: License Generator
 
 on:
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
-  generate-license:
+  generate:
     runs-on: ubuntu-latest
     steps:
 
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        persist-credentials: false  # 重要！保证后续提交权限
+        token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: false
 
 
 
-    - name: Set up Python 3.10.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10.8'
+        python-version: "3.10.8"
 
 
 
@@ -29,19 +30,29 @@ jobs:
 
 
 
-    - name: Configure and generate license
+    - name: Generate license file
       run: |
         pyarmor cfg outer_keyname=Qmusic.lic
         pyarmor gen key -e 31
 
 
 
-    - name: Commit generated files
+    - name: Commit license
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # 设置文件路径
         mkdir -p license
         mv dist/Qmusic.lic license/
+        
+        # 配置Git身份
         git config --global user.name "always1ov"
         git config --global user.email "always1ov@github.com"
+        
+        # 更新远程仓库URL包含认证信息
+        git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}.git
+        
+        # 提交变更
         git add license/Qmusic.lic
-        git commit -m "Auto-update license file"
-        git push
+        git commit -m "Auto-generated license file [skip ci]"
+        git push origin HEAD:${{ github.ref }}

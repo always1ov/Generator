@@ -40,22 +40,24 @@ jobs:
 
 
 
-    - name: Commit license
+
+    - name: Force Update License
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # 设置文件路径
+        # 强制覆盖操作
         mkdir -p license
-        mv dist/Qmusic.lic license/
-        
-        # 配置Git身份
+        \cp -f dist/Qmusic.lic license/  # 使用原生cp命令强制覆盖
+    
+        # 配置强制提交参数
         git config --global user.name "always1ov"
         git config --global user.email "always1ov@github.com"
-        
-        # 更新远程仓库URL包含认证信息
-        git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}.git
-        
-        # 提交变更
-        git add license/Qmusic.lic
-        git commit -m "Auto-generated license file [skip ci]"
-        git push origin HEAD:${{ github.ref }}
+        git config --global http.postBuffer 524288000  # 解决大文件提交问题
+    
+        # 认证设置（新版Git兼容方案）
+        git remote set-url origin https://always1ov:$GH_TOKEN@github.com/${{ github.repository }}.git
+    
+        # 强制提交流程
+        git add --force license/Qmusic.lic
+        git commit -m "Auto-update license [skip ci]" --allow-empty
+        git push --force-with-lease origin HEAD:${{ github.ref }}

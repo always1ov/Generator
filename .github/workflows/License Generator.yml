@@ -38,10 +38,10 @@ jobs:
 
     - name: Commit generated files
       run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        mkdir -p license  # 创建目录（如果不存在）
-        mv Qmusic.lic *.lic license/  # 移动生成文件到license目录
-        git add license/
-        git commit -m "Update license files via GitHub Actions"
+        mkdir -p license
+        mv dist/Qmusic.lic license/
+        git config --global user.name "always1ov"
+        git config --global user.email "always1ov@github.com"
+        git add license/Qmusic.lic
+        git commit -m "Auto-update license file"
         git push

@@ -1,0 +1,55 @@
+name: License Generator
+on:
+  schedule:
+
+    - cron: "0 18 * * *"  # UTC时间每天18点（北京时间次日2点）
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  generate-license:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: 检出仓库代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整提交历史
+
+
+
+    - name: 创建license目录
+      run: mkdir -p license
+
+
+
+    - name: 配置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+
+
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyarmor==9.0.7 pyinstaller==5.13.2
+
+
+
+    - name: 配置pyarmor
+      run: pyarmor cfg outer_keyname=Qmusic.lic
+
+
+
+    - name: 生成许可证
+      run: pyarmor gen key -e 31 --output ./license/
+
+
+
+    - name: 提交生成文件
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add ./license/*
+        git commit -m "Auto-generate license: $(date -u '+%Y-%m-%d %H:%M')" || echo "No changes to commit"
+        git push origin main

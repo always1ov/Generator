@@ -36,7 +36,7 @@ jobs:
     - name: Generate license file
       run: |
         pyarmor cfg outer_keyname=Qmusic.lic
-        pyarmor gen key -e 31
+        pyarmor gen key -e 35
 
 
 

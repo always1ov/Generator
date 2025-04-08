@@ -33,10 +33,16 @@ jobs:
 
 
 
-    - name: Generate license file
-      run: |
+    - name: Generate Qmusic License
+      run: |-
         pyarmor cfg outer_keyname=Qmusic.lic
         pyarmor gen key -e 35
+    
+    - name: Generate Wmusic License
+      run: |-
+        pyarmor cfg outer_keyname=Wmusic.lic
+        pyarmor gen key -e 35
+
 
 
 
@@ -47,8 +53,9 @@ jobs:
       run: |
         # 强制覆盖操作
         mkdir -p license
-        \cp -f dist/Qmusic.lic license/  # 使用原生cp命令强制覆盖
-  
+        \cp -f dist/Qmusic.lic license/
+        \cp -f dist/Wmusic.lic license/
+
         # 配置强制提交参数
         git config --global user.name "always1ov"
         git config --global user.email "always1ov@github.com"
@@ -58,6 +65,6 @@ jobs:
         git remote set-url origin https://always1ov:$GH_TOKEN@github.com/${{ github.repository }}.git
   
         # 强制提交流程
-        git add --force license/Qmusic.lic
+        git add --force license/Qmusic.lic license/Wmusic.lic
         git commit -m "Auto-update license [skip ci]" --allow-empty
         git push --force-with-lease origin HEAD:${{ github.ref }}

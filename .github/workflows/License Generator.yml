@@ -1,9 +1,8 @@
-name: License Generator
+name: Dual License Generator
 
 on:
   workflow_dispatch:
   schedule:
-
     - cron: '0 5 * * *'
 
 jobs:
@@ -17,47 +16,44 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         persist-credentials: false
 
-
-
-    - name: Set up Python 3.10
+    - name: Set up Python 3.8.0
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10.8"
-
-
+        python-version: "3.8.0"
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pyarmor==9.0.7 pyinstaller===5.13.2
 
-
-
-    - name: Generate license file
+    - name: Generate Qmusic License
       run: |
         pyarmor cfg outer_keyname=Qmusic.lic
         pyarmor gen key -e 35
 
+    - name: Generate Wmusic License
+      run: |-
+        pyarmor cfg outer_keyname=Wmusic.lic
+        pyarmor gen key -e 35
 
-
-
-    - name: Force Update License
+    - name: Force Update Licenses
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # 强制覆盖操作
+        # 创建目录并强制覆盖复制
         mkdir -p license
-        \cp -f dist/Qmusic.lic license/  # 使用原生cp命令强制覆盖
-    
-        # 配置强制提交参数
+        \cp -f dist/Qmusic.lic license/
+        \cp -f dist/Wmusic.lic license/
+
+        # 配置Git账户
         git config --global user.name "always1ov"
         git config --global user.email "always1ov@github.com"
-        git config --global http.postBuffer 524288000  # 解决大文件提交问题
-    
-        # 认证设置（新版Git兼容方案）
+        git config --global http.postBuffer 524288000
+
+        # 认证设置
         git remote set-url origin https://always1ov:$GH_TOKEN@github.com/${{ github.repository }}.git
-    
-        # 强制提交流程
-        git add --force license/Qmusic.lic
-        git commit -m "Auto-update license [skip ci]" --allow-empty
+
+        # 强制提交双许可证
+        git add --force license/Qmusic.lic license/Wmusic.lic
+        git commit -m "Auto-update dual licenses [skip ci]" --allow-empty
         git push --force-with-lease origin HEAD:${{ github.ref }}
